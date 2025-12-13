@@ -300,8 +300,8 @@
     "title": "Fancade"
   },
   {
-    "link": "projects/fake-virus/icon.png",
-    "imgSrc": "projects/fake-virus/index.html",
+    "link": "projects/fake-virus/index.html",
+    "imgSrc": "projects/fake-virus/icon.png",
     "title": "Fake Virus"
   },
   {
@@ -692,7 +692,7 @@
   },
   {
     "link": "projects/territorial/index.html",
-    "imgSrc": "projects/territorial/territorial.io.webp",
+    "imgSrc": "projects/territorial/Territorial.io.webp",
     "title": "Territorial.io"
   },
   {
