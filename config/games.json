@@ -350,6 +350,11 @@
     "title": "Exo"
   },
   {
+    "link": "projects/f1rgp/index.html",
+    "imgSrc": "projects/f1rgp/f1rgp.png",
+    "title": "F1 Random GP"
+  },
+  {
     "link": "projects/factoryballs/index.html",
     "imgSrc": "projects/factoryballs/images/splash.png",
     "title": "Factory Balls Forever"
