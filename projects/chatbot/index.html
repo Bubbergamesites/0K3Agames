@@ -3,127 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clean Local AI</title>
+    <title>In-Browser AI Chat</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f8f9fa; display: flex; justify-content: center; padding: 20px; }
-        #chat-container { width: 100%; max-width: 500px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: flex; flex-direction: column; height: 85vh; }
-        #status { font-size: 11px; color: #777; padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 10px 15px; border-radius: 18px; max-width: 85%; font-size: 15px; line-height: 1.5; white-space: pre-wrap; }
-        .user { background: #007bff; color: white; align-self: flex-end; }
-        .bot { background: #f0f0f2; color: #222; align-self: flex-start; border: 1px solid #e1e1e4; }
-        #input-area { display: flex; padding: 12px; border-top: 1px solid #eee; gap: 8px; }
-        input { flex: 1; border: 1px solid #ddd; padding: 12px; border-radius: 25px; outline: none; }
-        button { background: #007bff; color: white; border: none; padding: 0 18px; border-radius: 25px; cursor: pointer; font-weight: bold; }
-        #stop-btn { background: #dc3545; display: none; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        #chat-container { width: 100%; max-width: 600px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        #status { font-size: 12px; color: #666; padding: 10px 20px; background: #fafafa; border-bottom: 1px solid #eee; }
+        .msg { padding: 12px 16px; border-radius: 18px; max-width: 85%; line-height: 1.5; font-size: 15px; }
+        .user { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .bot { background: #f1f0f0; color: #222; align-self: flex-start; border-bottom-left-radius: 2px; }
+        #input-area { display: flex; padding: 15px; border-top: 1px solid #eee; }
+        input { flex: 1; border: 1px solid #ddd; padding: 12px; border-radius: 8px; outline: none; margin-right: 10px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #ccc; }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
-    <div id="status">Warming up...</div>
-    <div id="messages"></div>
+    <div id="status">Initializing engine... (Check console)</div>
+    <div id="messages">
+        <div class="msg bot">Hello! Once the model loads, I'll be ready to chat.</div>
+    </div>
     <div id="input-area">
-        <input type="text" id="user-input" placeholder="Loading..." disabled>
+        <input type="text" id="user-input" placeholder="Loading AI..." disabled>
         <button id="send-btn" disabled>Send</button>
-        <button id="stop-btn">Stop</button>
     </div>
 </div>
 
 <script type="module">
+    // Import the WebLLM engine from a CDN
     import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-    const messagesContainer = document.getElementById("messages");
-    const status = document.getElementById("status");
-    const userInput = document.getElementById("user-input");
-    const sendBtn = document.getElementById("send-btn");
-    const stopBtn = document.getElementById("stop-btn");
+    const statusDiv = document.getElementById('status');
+    const inputField = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const messagesDiv = document.getElementById('messages');
 
-    const modelId = "TinyLlama-1.1B-Chat-v0.4-q4f32_1-MLC";
+    // Configuration: We'll use the Llama-3.2-1B model
+    const selectedModel = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
     let engine;
-    let currentAbortController = null;
 
-    async function init() {
+    async function initChat() {
         try {
-            engine = await webllm.CreateMLCEngine(modelId, {
-                initProgressCallback: (report) => status.innerText = report.text
+            // Create the engine and set a callback to show loading progress
+            engine = await webllm.CreateMLCEngine(selectedModel, {
+                initProgressCallback: (report) => {
+                    statusDiv.innerText = report.text;
+                }
             });
-            userInput.disabled = false;
+
+            statusDiv.innerText = "AI Ready (Local)";
+            inputField.disabled = false;
             sendBtn.disabled = false;
-            userInput.placeholder = "Type here...";
-            status.innerText = "Local AI Online";
-        } catch (e) {
-            status.innerText = "WebGPU not supported on this browser.";
+            inputField.placeholder = "Type your message...";
+        } catch (err) {
+            statusDiv.innerText = "Error: " + err.message;
+            console.error(err);
         }
     }
 
-    // Cleans up "typos" caused by low-memory tokenization
-    function cleanText(text) {
-        return text
-            .replace(/\s+([.,!?;:])/g, '$1') // Fix spaces before punctuation
-            .replace(/<0x0A>/g, '\n')        // Fix raw byte characters
-            .replace(/\s\s+/g, ' ')          // Remove double spaces
-            .trim();
-    }
-
-    async function handleSend() {
-        const text = userInput.value.trim();
+    window.sendMessage = async () => {
+        const text = inputField.value.trim();
         if (!text) return;
 
-        if (currentAbortController) stopGenerating();
+        addMessage(text, 'user');
+        inputField.value = '';
+        inputField.disabled = true;
 
-        appendMessage(text, 'user');
-        userInput.value = "";
+        const botMsgDiv = addMessage("...", 'bot');
         
-        const botMsgDiv = appendMessage("...", 'bot');
-        sendBtn.style.display = "none";
-        stopBtn.style.display = "block";
-        
-        currentAbortController = new AbortController();
+        // Generate the response
+        let fullResponse = "";
+        const chunks = await engine.chat.completions.create({
+            messages: [{ role: "user", content: text }],
+            stream: true, // This makes the text appear as it's being "thought"
+        });
 
-        try {
-            const chunks = await engine.chat.completions.create({
-                messages: [{ role: "user", content: text }],
-                stream: true,
-                temperature: 0.6 // Lower temperature reduces typos/randomness
-            });
-
-            let fullReply = "";
-            for await (const chunk of chunks) {
-                if (currentAbortController.signal.aborted) break;
-                fullReply += chunk.choices[0]?.delta.content || "";
-                botMsgDiv.innerText = cleanText(fullReply);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-        } catch (err) {
-            if (err.name !== 'AbortError') botMsgDiv.innerText = "Error encountered.";
-        } finally {
-            stopGenerating();
+        for await (const chunk of chunks) {
+            const content = chunk.choices[0]?.delta?.content || "";
+            fullResponse += content;
+            botMsgDiv.innerText = fullResponse;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-    }
 
-    function stopGenerating() {
-        if (currentAbortController) currentAbortController.abort();
-        currentAbortController = null;
-        sendBtn.style.display = "block";
-        stopBtn.style.display = "none";
-    }
+        inputField.disabled = false;
+        inputField.focus();
+    };
 
-    function appendMessage(text, sender) {
-        const div = document.createElement("div");
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
         div.className = `msg ${sender}`;
         div.innerText = text;
-        messagesContainer.appendChild(div);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
         return div;
     }
 
-    sendBtn.onclick = handleSend;
-    stopBtn.onclick = stopGenerating;
-    userInput.onkeypress = (e) => { if(e.key === "Enter") handleSend(); };
+    // Attach event listeners
+    sendBtn.onclick = window.sendMessage;
+    inputField.onkeypress = (e) => { if (e.key === 'Enter') window.sendMessage(); };
 
-    init();
+    // Start loading the model immediately
+    initChat();
 </script>
 
 </body>
