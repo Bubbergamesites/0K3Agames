@@ -484,6 +484,11 @@
     "imgSrc": "projects/impossiblequiz/impossiblequiz.png",
     "title": "Impossible Quiz"
   },
+   {
+    "link": "projects/ifk/index.html",
+    "imgSrc": "projects/ifk/ifk.png",
+    "title": "INF3RK1T (infer kit)"
+  },
   {
     "link": "projects/infiltratingtheairship/index.html",
     "imgSrc": "projects/infiltratingtheairship/images.webp",
