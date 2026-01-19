@@ -180,6 +180,11 @@
     "title": "circlO"
   },
   {
+    "link": "projects/clusterrush/index.html",
+    "imgSrc": "projects/clusterrush/clusterrush.png",
+    "title": "Cluster Rush"
+  },
+  {
     "link": "projects/connect3/index.html",
     "imgSrc": "projects/connect3/connect3.png",
     "title": "Connect 3"
