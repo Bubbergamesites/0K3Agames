@@ -6,7 +6,7 @@ Welcome to 0K3A, my flagship gaming website.
 - Fast
 - many games
 - chatbot ai
-- Obama approves 👍
+- Obamna SODAA!!!! 👍
 
 ## Get your copy
 
